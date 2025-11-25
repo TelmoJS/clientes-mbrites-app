@@ -1,93 +1,136 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Clientes M&Brites</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clientes M-Brites</title>
 
 <style>
-body {
-    margin: 0;
-    padding: 0;
-    background: url('bg-mbrites-road.jpg') no-repeat center center fixed;
-    background-size: cover;
-    font-family: Arial, sans-serif;
-}
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #000;
+        background-image: url('bg-mbrites-road.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        color: white;
+        text-align: center;
+    }
 
-#container {
-    backdrop-filter: blur(4px);
-    background: rgba(0,0,0,0.55);
-    max-width: 700px;
-    margin: 40px auto;
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
-    color: white;
-}
+    .overlay {
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(3px) brightness(0.65);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 40px;
+    }
 
-#logo {
-    width: 180px;
-    margin-bottom: 10px;
-}
+    .logo {
+        width: 180px;
+        margin-bottom: 15px;
+    }
 
-input {
-    width: 92%;
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    margin-top: 10px;
-    font-size: 16px;
-}
+    .search-box {
+        background: rgba(0,0,0,0.6);
+        padding: 15px;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 420px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
 
-.card {
-    background: rgba(255,255,255,0.15);
-    padding: 12px;
-    border-radius: 8px;
-    margin-top: 12px;
-    text-align: left;
-}
+    input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+    }
+
+    .results {
+        margin-top: 20px;
+        width: 90%;
+        max-width: 450px;
+    }
+
+    .card {
+        background: rgba(0,0,0,0.65);
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        text-align: left;
+        border-left: 4px solid #00aaff;
+        animation: fadein 0.4s ease;
+    }
+
+    @keyframes fadein {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 </head>
 
 <body>
 
-<div id="container">
-    <img id="logo" src="logo_mbrites.png">
-    <h2>M-BRITES Transportes</h2>
+<div class="overlay">
+    <img src="logo_mbrites.png" class="logo" alt="logo" />
 
-    <input type="text" id="search" placeholder="Escreve aqui para filtrar os clientes...">
-    <div id="lista"></div>
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Escreve o ID ou nome do cliente..." />
+    </div>
+
+    <div class="results" id="results"></div>
 </div>
 
 <script>
+// ==========================
+// CLIENTES (EMBUTIDOS AQUI)
+// ==========================
 const clientes = [
-    {
-        "id": "21465",
-        "nome": "Saint John's Burger",
-        "local": "Exemplo"
-    },
-    {
-        "id": "21465",
-        "nome": "Saint John's Burger (2)",
-        "local": "Exemplo 2"
-    }
+    { "id": "0001", "nome": "Cliente Exemplo 1", "local": "Lisboa" },
+    { "id": "0002", "nome": "Cliente Exemplo 2", "local": "Porto" },
+    { "id": "19386", "nome": "Repsol Tojeira", "local": "Tojeira" },
+    { "id": "21872", "nome": "Snack Bar N Sabores", "local": "Ansião" },
+    { "id": "16659", "nome": "Hongru", "local": "Tocha" },
+    { "id": "15409", "nome": "Cooperativa Tocha", "local": "Tocha" }
 ];
 
-document.getElementById('search').addEventListener('input', function() {
-    const q = this.value.toLowerCase();
-    const lista = document.getElementById('lista');
-    lista.innerHTML = "";
+// PODES MANDAR O EXCEL MAIS TARDE → EU TRANSFORMO PARA ESTE FORMATO
 
-    clientes
-        .filter(c => c.id.toLowerCase().includes(q) || c.nome.toLowerCase().includes(q))
-        .forEach(c => {
-            lista.innerHTML += `
-                <div class="card">
-                    <b>ID:</b> ${c.id}<br>
-                    <b>Nome:</b> ${c.nome}<br>
-                    <b>Local:</b> ${c.local}
-                </div>`;
-        });
+// ==========================
+// SISTEMA DE PESQUISA
+// ==========================
+const searchInput = document.getElementById("search");
+const resultsDiv = document.getElementById("results");
+
+searchInput.addEventListener("input", () => {
+    const txt = searchInput.value.trim().toLowerCase();
+    resultsDiv.innerHTML = "";
+
+    if (txt.length === 0) return;
+
+    const filtrados = clientes.filter(c =>
+        c.id.includes(txt) ||
+        c.nome.toLowerCase().includes(txt)
+    );
+
+    if (filtrados.length === 0) {
+        resultsDiv.innerHTML = `<p>Nenhum cliente encontrado.</p>`;
+        return;
+    }
+
+    filtrados.forEach(c => {
+        resultsDiv.innerHTML += `
+            <div class="card">
+                <strong>ID:</strong> ${c.id}<br>
+                <strong>Nome:</strong> ${c.nome}<br>
+                <strong>Local:</strong> ${c.local}
+            </div>
+        `;
+    });
 });
 </script>
 

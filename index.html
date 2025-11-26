@@ -16,127 +16,86 @@
         display: flex;
         justify-content: center;
         padding: 20px 10px;
+        color: white;
     }
 
     .app {
         width: 100%;
         max-width: 760px;
-        background: rgba(0,0,0,0.75);
+        background: rgba(0,0,0,0.78);
         border-radius: 18px;
         padding: 20px;
-        box-shadow: 0 0 18px rgba(0,0,0,0.6);
-        color: #fff;
         text-align: center;
+        box-shadow: 0 0 18px rgba(0,0,0,0.65);
     }
 
     .logo {
-        width: 190px;
-        margin-bottom: 10px;
-        border-radius: 6px;
+        width: 180px;
+        margin-bottom: 12px;
     }
 
-    h1 {
-        font-size: 22px;
-        margin: 4px 0 16px;
+    .search-box {
+        margin-top: 10px;
+        margin-bottom: 16px;
     }
 
-    .search-wrapper {
-        margin-bottom: 10px;
-    }
-
-    .search-input {
+    .search {
         width: 100%;
         padding: 12px;
         border-radius: 10px;
-        border: 2px solid #ccc;
+        border: none;
         font-size: 16px;
         outline: none;
     }
 
-    .search-input:focus {
-        border-color: #00b4ff;
-    }
-
-    .status {
-        font-size: 13px;
-        margin-top: 4px;
-        opacity: 0.85;
-    }
-
     .cards {
-        margin-top: 14px;
+        margin-top: 10px;
         text-align: left;
         max-height: 65vh;
         overflow-y: auto;
     }
 
     .card {
-        background: rgba(30,30,30,0.85);
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin-bottom: 10px;
+        background: rgba(20,20,20,0.85);
         border-left: 4px solid #00aaff;
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        animation: fadein 0.3s ease;
         font-size: 14px;
     }
 
-    .card strong {
-        font-weight: 700;
+    @keyframes fadein {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
-    .card-buttons {
+    .btns {
         margin-top: 8px;
         display: flex;
         gap: 8px;
-        flex-wrap: wrap;
     }
 
     .btn {
         flex: 1;
-        min-width: 90px;
-        text-align: center;
-        text-decoration: none;
-        padding: 8px 10px;
+        padding: 8px;
         border-radius: 8px;
+        text-align: center;
+        color: white;
+        text-decoration: none;
         font-size: 14px;
-        border: none;
-        cursor: pointer;
-        display: inline-block;
     }
 
-    .btn-phone {
-        background: #444;
-        color: #fff;
-    }
-
-    .btn-maps {
-        background: #0a8f3a;
-        color: #fff;
-    }
-
-    .no-results {
-        margin-top: 16px;
-        font-size: 14px;
-        opacity: 0.9;
-    }
+    .ligar { background: #555; }
+    .maps { background: #0a8f3a; }
 </style>
 </head>
 
 <body>
 <div class="app">
-    <img src="logo_mbrites.png" alt="M-Brites" class="logo" />
-    <h1>M-BRITES Transportes</h1>
+    <img src="logo_mbrites.png" class="logo" />
 
-    <div class="search-wrapper">
-        <input
-            id="search"
-            class="search-input"
-            type="text"
-            placeholder="Escreve aqui para filtrar os clientes (ID ou nome)..."
-        />
-        <div id="status" class="status">
-            A carregar base de dados de clientes...
-        </div>
-    </div>
+    <input id="search" class="search" placeholder="Escreve ID ou nome..." />
 
     <div id="cards" class="cards"></div>
 </div>
@@ -148,98 +107,52 @@ function normalizar(t) {
     return t == null ? "" : t.toString().toLowerCase();
 }
 
-// Carregar clientes.json (tem de estar na MESMA pasta do index.html)
-async function carregarClientes() {
-    const status = document.getElementById("status");
-    try {
-        const resp = await fetch("clientes.json");
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        clientes = await resp.json();
-
-        status.textContent =
-            "Pronto! Carregados " + clientes.length +
-            " clientes. Começa a escrever o ID ou o nome para ver os cartões.";
-    } catch (e) {
-        console.error(e);
-        status.textContent =
-            "Erro ao carregar clientes.json. Garante que está na mesma pasta que o index.html no GitHub.";
-    }
+async function carregar() {
+    const resp = await fetch("clientes.json");
+    clientes = await resp.json();
 }
 
-// Renderizar resultados de pesquisa
-function atualizarResultados() {
+function listar() {
     const q = normalizar(document.getElementById("search").value);
     const cards = document.getElementById("cards");
     cards.innerHTML = "";
 
-    if (!q) {
-        // não mostra nada até começar a escrever
-        return;
-    }
+    if (!q) return;
 
-    const resultados = clientes.filter(c => {
-        const id = normalizar(c["ID Cliente"]);
-        const nome = normalizar(c["Cliente"]);
-        return id.includes(q) || nome.includes(q);
-    });
+    clientes
+        .filter(c => normalizar(c["ID Cliente"]).includes(q) ||
+                      normalizar(c["Cliente"]).includes(q))
+        .forEach(c => {
+            const id = c["ID Cliente"] ?? "";
+            const nome = c["Cliente"] ?? "";
+            const forn = c["Fornecedor"] ?? "";
+            const local = c["Tipo Local"] ?? "";
+            const desc = c["Tipo de Descarga"] ?? "";
+            const tel = (c["Contacto"] ?? "").toString().trim();
+            const maps = (c["Localização (Maps)"] ?? "").toString().trim();
 
-    if (resultados.length === 0) {
-        cards.innerHTML = '<div class="no-results">Nenhum cliente encontrado para esse filtro.</div>';
-        return;
-    }
+            let html = `
+                <div class="card">
+                    <div><strong>ID Cliente:</strong> ${id}</div>
+                    <div><strong>Fornecedor:</strong> ${forn}</div>
+                    <div><strong>Local:</strong> ${local}</div>
+                    <div><strong>Tipo Descarga:</strong> ${desc}</div>
+            `;
 
-    // se quiseres limitar, muda aqui (por ex. .slice(0, 50))
-    resultados.forEach(c => {
-        const id = c["ID Cliente"] ?? "";
-        const nome = c["Cliente"] ?? "";
-        const fornecedor = c["Fornecedor"] ?? "";
-        const local = c["Tipo Local"] ?? "";
-        const tipoDescarga = c["Tipo de Descarga"] ?? "";
-        const contacto = (c["Contacto"] ?? "").toString().trim();
-        const linkMaps = (c["Localização (Maps)"] ?? "").toString().trim();
+            let btns = "";
 
-        const temTelefone = contacto.length > 0;
-        const temMaps = linkMaps.length > 0;
+            if (tel) btns += `<a class="btn ligar" href="tel:${tel}">Ligar</a>`;
+            if (maps) btns += `<a class="btn maps" href="${maps}" target="_blank">Maps</a>`;
 
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-            <div><strong>ID Cliente:</strong> ${id}</div>
-            <div><strong>Fornecedor:</strong> ${fornecedor}</div>
-            <div><strong>Local:</strong> ${local}</div>
-            <div><strong>Tipo Descarga:</strong> ${tipoDescarga}</div>
-        `;
+            if (btns) html += `<div class="btns">${btns}</div>`;
 
-        const btns = document.createElement("div");
-        btns.className = "card-buttons";
-
-        if (temTelefone) {
-            const aTel = document.createElement("a");
-            aTel.className = "btn btn-phone";
-            aTel.textContent = "Ligar";
-            aTel.href = "tel:" + contacto.replace(/\s+/g, "");
-            btns.appendChild(aTel);
-        }
-
-        if (temMaps) {
-            const aMaps = document.createElement("a");
-            aMaps.className = "btn btn-maps";
-            aMaps.textContent = "Maps";
-            aMaps.href = linkMaps;
-            aMaps.target = "_blank";
-            btns.appendChild(aMaps);
-        }
-
-        if (btns.children.length > 0) {
-            card.appendChild(btns);
-        }
-
-        cards.appendChild(card);
-    });
+            html += `</div>`;
+            cards.innerHTML += html;
+        });
 }
 
-document.getElementById("search").addEventListener("input", atualizarResultados);
-carregarClientes();
+document.getElementById("search").addEventListener("input", listar);
+carregar();
 </script>
 
 </body>

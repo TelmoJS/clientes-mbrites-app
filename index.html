@@ -9,129 +9,237 @@
     body {
         margin: 0;
         font-family: Arial, sans-serif;
-        background: #000;
         background-image: url('bg-mbrites-road.jpg');
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        color: white;
+        display: flex;
+        justify-content: center;
+        padding: 20px 10px;
+    }
+
+    .app {
+        width: 100%;
+        max-width: 760px;
+        background: rgba(0,0,0,0.75);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 0 18px rgba(0,0,0,0.6);
+        color: #fff;
         text-align: center;
     }
 
-    .overlay {
-        width: 100%;
-        height: 100%;
-        backdrop-filter: blur(3px) brightness(0.65);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-top: 40px;
-    }
-
     .logo {
-        width: 180px;
-        margin-bottom: 15px;
+        width: 190px;
+        margin-bottom: 10px;
+        border-radius: 6px;
     }
 
-    .search-box {
-        background: rgba(0,0,0,0.6);
-        padding: 15px;
-        border-radius: 15px;
-        width: 90%;
-        max-width: 420px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    h1 {
+        font-size: 22px;
+        margin: 4px 0 16px;
     }
 
-    input {
+    .search-wrapper {
+        margin-bottom: 10px;
+    }
+
+    .search-input {
         width: 100%;
         padding: 12px;
-        border-radius: 8px;
-        border: none;
+        border-radius: 10px;
+        border: 2px solid #ccc;
         font-size: 16px;
+        outline: none;
     }
 
-    .results {
-        margin-top: 20px;
-        width: 90%;
-        max-width: 450px;
+    .search-input:focus {
+        border-color: #00b4ff;
+    }
+
+    .status {
+        font-size: 13px;
+        margin-top: 4px;
+        opacity: 0.85;
+    }
+
+    .cards {
+        margin-top: 14px;
+        text-align: left;
+        max-height: 65vh;
+        overflow-y: auto;
     }
 
     .card {
-        background: rgba(0,0,0,0.65);
-        padding: 15px;
-        border-radius: 12px;
-        margin-bottom: 12px;
-        text-align: left;
+        background: rgba(30,30,30,0.85);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
         border-left: 4px solid #00aaff;
-        animation: fadein 0.4s ease;
+        font-size: 14px;
     }
 
-    @keyframes fadein {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+    .card strong {
+        font-weight: 700;
+    }
+
+    .card-buttons {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        flex: 1;
+        min-width: 90px;
+        text-align: center;
+        text-decoration: none;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        display: inline-block;
+    }
+
+    .btn-phone {
+        background: #444;
+        color: #fff;
+    }
+
+    .btn-maps {
+        background: #0a8f3a;
+        color: #fff;
+    }
+
+    .no-results {
+        margin-top: 16px;
+        font-size: 14px;
+        opacity: 0.9;
     }
 </style>
 </head>
 
 <body>
+<div class="app">
+    <img src="logo_mbrites.png" alt="M-Brites" class="logo" />
+    <h1>M-BRITES Transportes</h1>
 
-<div class="overlay">
-    <img src="logo_mbrites.png" class="logo" alt="logo" />
-
-    <div class="search-box">
-        <input type="text" id="search" placeholder="Escreve o ID ou nome do cliente..." />
+    <div class="search-wrapper">
+        <input
+            id="search"
+            class="search-input"
+            type="text"
+            placeholder="Escreve aqui para filtrar os clientes (ID ou nome)..."
+        />
+        <div id="status" class="status">
+            A carregar base de dados de clientes...
+        </div>
     </div>
 
-    <div class="results" id="results"></div>
+    <div id="cards" class="cards"></div>
 </div>
 
 <script>
-// ==========================
-// CLIENTES (EMBUTIDOS AQUI)
-// ==========================
-const clientes = [
-    { "id": "0001", "nome": "Cliente Exemplo 1", "local": "Lisboa" },
-    { "id": "0002", "nome": "Cliente Exemplo 2", "local": "Porto" },
-    { "id": "19386", "nome": "Repsol Tojeira", "local": "Tojeira" },
-    { "id": "21872", "nome": "Snack Bar N Sabores", "local": "Ansião" },
-    { "id": "16659", "nome": "Hongru", "local": "Tocha" },
-    { "id": "15409", "nome": "Cooperativa Tocha", "local": "Tocha" }
-];
+let clientes = [];
 
-// PODES MANDAR O EXCEL MAIS TARDE → EU TRANSFORMO PARA ESTE FORMATO
+function normalizar(t) {
+    return t == null ? "" : t.toString().toLowerCase();
+}
 
-// ==========================
-// SISTEMA DE PESQUISA
-// ==========================
-const searchInput = document.getElementById("search");
-const resultsDiv = document.getElementById("results");
+// Carregar clientes.json (tem de estar na MESMA pasta do index.html)
+async function carregarClientes() {
+    const status = document.getElementById("status");
+    try {
+        const resp = await fetch("clientes.json");
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        clientes = await resp.json();
 
-searchInput.addEventListener("input", () => {
-    const txt = searchInput.value.trim().toLowerCase();
-    resultsDiv.innerHTML = "";
+        status.textContent =
+            "Pronto! Carregados " + clientes.length +
+            " clientes. Começa a escrever o ID ou o nome para ver os cartões.";
+    } catch (e) {
+        console.error(e);
+        status.textContent =
+            "Erro ao carregar clientes.json. Garante que está na mesma pasta que o index.html no GitHub.";
+    }
+}
 
-    if (txt.length === 0) return;
+// Renderizar resultados de pesquisa
+function atualizarResultados() {
+    const q = normalizar(document.getElementById("search").value);
+    const cards = document.getElementById("cards");
+    cards.innerHTML = "";
 
-    const filtrados = clientes.filter(c =>
-        c.id.includes(txt) ||
-        c.nome.toLowerCase().includes(txt)
-    );
-
-    if (filtrados.length === 0) {
-        resultsDiv.innerHTML = `<p>Nenhum cliente encontrado.</p>`;
+    if (!q) {
+        // não mostra nada até começar a escrever
         return;
     }
 
-    filtrados.forEach(c => {
-        resultsDiv.innerHTML += `
-            <div class="card">
-                <strong>ID:</strong> ${c.id}<br>
-                <strong>Nome:</strong> ${c.nome}<br>
-                <strong>Local:</strong> ${c.local}
-            </div>
-        `;
+    const resultados = clientes.filter(c => {
+        const id = normalizar(c["ID Cliente"]);
+        const nome = normalizar(c["Cliente"]);
+        return id.includes(q) || nome.includes(q);
     });
-});
+
+    if (resultados.length === 0) {
+        cards.innerHTML = '<div class="no-results">Nenhum cliente encontrado para esse filtro.</div>';
+        return;
+    }
+
+    // se quiseres limitar, muda aqui (por ex. .slice(0, 50))
+    resultados.forEach(c => {
+        const id = c["ID Cliente"] ?? "";
+        const nome = c["Cliente"] ?? "";
+        const fornecedor = c["Fornecedor"] ?? "";
+        const local = c["Tipo Local"] ?? "";
+        const tipoDescarga = c["Tipo de Descarga"] ?? "";
+        const contacto = (c["Contacto"] ?? "").toString().trim();
+        const linkMaps = (c["Localização (Maps)"] ?? "").toString().trim();
+
+        const temTelefone = contacto.length > 0;
+        const temMaps = linkMaps.length > 0;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+            <div><strong>ID Cliente:</strong> ${id}</div>
+            <div><strong>Fornecedor:</strong> ${fornecedor}</div>
+            <div><strong>Local:</strong> ${local}</div>
+            <div><strong>Tipo Descarga:</strong> ${tipoDescarga}</div>
+        `;
+
+        const btns = document.createElement("div");
+        btns.className = "card-buttons";
+
+        if (temTelefone) {
+            const aTel = document.createElement("a");
+            aTel.className = "btn btn-phone";
+            aTel.textContent = "Ligar";
+            aTel.href = "tel:" + contacto.replace(/\s+/g, "");
+            btns.appendChild(aTel);
+        }
+
+        if (temMaps) {
+            const aMaps = document.createElement("a");
+            aMaps.className = "btn btn-maps";
+            aMaps.textContent = "Maps";
+            aMaps.href = linkMaps;
+            aMaps.target = "_blank";
+            btns.appendChild(aMaps);
+        }
+
+        if (btns.children.length > 0) {
+            card.appendChild(btns);
+        }
+
+        cards.appendChild(card);
+    });
+}
+
+document.getElementById("search").addEventListener("input", atualizarResultados);
+carregarClientes();
 </script>
 
 </body>

@@ -107,6 +107,7 @@ function normalizar(t) {
     return t == null ? "" : t.toString().toLowerCase();
 }
 
+// Carregar JSON
 async function carregar() {
     const resp = await fetch("clientes.json");
     clientes = await resp.json();
@@ -117,11 +118,13 @@ function listar() {
     const cards = document.getElementById("cards");
     cards.innerHTML = "";
 
-    if (!q) return;
+    if (!q) return; // só mostra quando escrever
 
     clientes
-        .filter(c => normalizar(c["ID Cliente"]).includes(q) ||
-                      normalizar(c["Cliente"]).includes(q))
+        .filter(c =>
+            normalizar(c["ID Cliente"]).includes(q) ||
+            normalizar(c["Cliente"]).includes(q)
+        )
         .forEach(c => {
             const id = c["ID Cliente"] ?? "";
             const nome = c["Cliente"] ?? "";
@@ -134,6 +137,7 @@ function listar() {
             let html = `
                 <div class="card">
                     <div><strong>ID Cliente:</strong> ${id}</div>
+                    <div><strong>Cliente:</strong> ${nome}</div>
                     <div><strong>Fornecedor:</strong> ${forn}</div>
                     <div><strong>Local:</strong> ${local}</div>
                     <div><strong>Tipo Descarga:</strong> ${desc}</div>
@@ -144,9 +148,11 @@ function listar() {
             if (tel) btns += `<a class="btn ligar" href="tel:${tel}">Ligar</a>`;
             if (maps) btns += `<a class="btn maps" href="${maps}" target="_blank">Maps</a>`;
 
-            if (btns) html += `<div class="btns">${btns}</div>`;
+            if (btns)
+                html += `<div class="btns">${btns}</div>`;
 
             html += `</div>`;
+
             cards.innerHTML += html;
         });
 }
